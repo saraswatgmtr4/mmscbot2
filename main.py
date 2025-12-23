@@ -4,24 +4,12 @@ import yt_dlp
 from pyrogram import Client, filters, idle
 from pytgcalls import PyTgCalls
 import config
+from pyrogram import Client, filters, idle
+from pytgcalls import PyTgCalls
+import config
 
-# 1. Initialize the Bot (The one that handles /commands)
-bot = Client(
-    "MusicBot",
-    api_id=config.API_ID,
-    api_hash=config.API_HASH,
-    bot_token=config.BOT_TOKEN
-)
-
-# 2. Initialize the Assistant (The User Account that joins VC)
-assistant = Client(
-    "Assistant",
-    api_id=config.API_ID,
-    api_hash=config.API_HASH,
-    session_string=config.SESSION_NAME
-)
-
-# 3. Initialize PyTgCalls and link it to the Assistant
+bot = Client("Bot", config.API_ID, config.API_HASH, bot_token=config.BOT_TOKEN)
+assistant = Client("Assistant", config.API_ID, config.API_HASH, session_string=config.SESSION_NAME)
 call_py = PyTgCalls(assistant)
 # --- HELPERS ---
 def get_btns(extra=None):
@@ -147,6 +135,7 @@ async def start_all():
 if __name__ == "__main__":
 
     asyncio.get_event_loop().run_until_complete(start_all())
+
 
 
 
