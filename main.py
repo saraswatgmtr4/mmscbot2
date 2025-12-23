@@ -38,7 +38,7 @@ async def play_cmd(_, message: Message):
     if message.command[0] == "playforce":
         config.queue[message.chat.id] = []  # Clear queue
 
-    await call_py.play(message.chat.id, InputAudioStream(url))
+    await call_py.play(message.chat.id, AudioPiped(url))
     config.playing[message.chat.id] = {"url": url, "title": title}
 
     controls = [
@@ -120,4 +120,5 @@ async def start_all():
 if __name__ == "__main__":
 
     asyncio.get_event_loop().run_until_complete(start_all())
+
 
