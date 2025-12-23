@@ -1,10 +1,7 @@
 import asyncio, os, yt_dlp
 from pyrogram import Client, filters, idle
-from pyrogram.types import InlineKeyboardMarkup, InlineKeyboardButton, Message, ChatPrivileges
 from pytgcalls import PyTgCalls
-from pytgcalls.stream import AudioPiped  # <--- Use this for v2.0+
-# Note: In the newest v2.x, 'AudioPiped' was actually restored or kept 
-# but moved to .stream. If 'AudioPiped' fails, use 'from pytgcalls.stream import Stream'
+from pytgcalls import idle  # Import idle from here now
 import config
 # Initialize Clients
 bot = Client("Bot", config.API_ID, config.API_HASH, bot_token=config.BOT_TOKEN)
@@ -38,7 +35,8 @@ async def play_cmd(_, message: Message):
     if message.command[0] == "playforce":
         config.queue[message.chat.id] = []  # Clear queue
 
-    await call_py.play(message.chat.id, AudioPiped(url))
+    # No need for AudioPiped(...) wrapper anymore!
+await call_py.play(message.chat.id, url)
     config.playing[message.chat.id] = {"url": url, "title": title}
 
     controls = [
@@ -120,5 +118,6 @@ async def start_all():
 if __name__ == "__main__":
 
     asyncio.get_event_loop().run_until_complete(start_all())
+
 
 
