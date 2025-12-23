@@ -1,5 +1,6 @@
 pyrogram
-py-tgcalls
+py-tgcalls>=2.0.0
+tgcrypto
 yt-dlp
 ffmpeg-python
 python-dotenv
