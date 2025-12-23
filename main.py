@@ -25,28 +25,43 @@ async def check_admin(chat_id, user_id):
 @bot.on_message(filters.command(["play", "playforce"]) & filters.group)
 async def play_cmd(_, message: Message):
     query = " ".join(message.command[1:])
-    if not query: return await message.reply("Give me a song name!")
+    if not query:
+        return await message.reply("Give me a song name!")
 
     m = await message.reply("🔎 Searching...")
-    with yt_dlp.YoutubeDL({"format": "bestaudio", "quiet": True}) as ytdl:
-        info = ytdl.extract_info(f"ytsearch:{query}", download=False)['entries'][0]
-        url, title, duration = info['url'], info['title'], info['duration']
+    
+    try:
+        # 1. Search for the song
+        with yt_dlp.YoutubeDL({"format": "bestaudio", "quiet": True}) as ytdl:
+            info = ytdl.extract_info(f"ytsearch:{query}", download=False)['entries'][0]
+            url, title, duration = info['url'], info['title'], info['duration']
 
-    if message.command[0] == "playforce":
-        config.queue[message.chat.id] = []  # Clear queue
+        # 2. Handle 'playforce' logic
+        if message.command[0] == "playforce":
+            config.queue[message.chat.id] = []  # Clear queue
 
-    # No need for AudioPiped(...) wrapper anymore!
-await call_py.play(message.chat.id, url)
-    config.playing[message.chat.id] = {"url": url, "title": title}
+        # 3. Start Playing (2025 v2.x direct-play syntax)
+        # Note: All lines below this are indented 4 spaces from the 'try'
+        await call_py.play(message.chat.id, url)
+        
+        # 4. Update tracking state
+        config.playing[message.chat.id] = {"url": url, "title": title}
 
-    controls = [
-        [InlineKeyboardButton("⏸ Pause", callback_data="pause"),
-         InlineKeyboardButton("▶️ Resume", callback_data="resume")],
-        [InlineKeyboardButton("⏭ Skip", callback_data="skip"), InlineKeyboardButton("⏹ End", callback_data="stop")]
-    ]
-    await m.edit(f"🎶 **Playing:** {title}\n🕒 **Duration:** {duration}s",
-                 reply_markup=get_btns(controls[0] + controls[1]))
+        # 5. Build Buttons
+        controls = [
+            [InlineKeyboardButton("⏸ Pause", callback_data="pause"),
+             InlineKeyboardButton("▶️ Resume", callback_data="resume")],
+            [InlineKeyboardButton("⏭ Skip", callback_data="skip"), 
+             InlineKeyboardButton("⏹ End", callback_data="stop")]
+        ]
+        
+        await m.edit(
+            f"🎶 **Playing:** {title}\n🕒 **Duration:** {duration}s",
+            reply_markup=get_btns(controls[0] + controls[1])
+        )
 
+    except Exception as e:
+        await m.edit(f"❌ **Error:** {e}")
 
 @bot.on_message(filters.command(["pause", "resume", "end", "skip"]) & filters.group)
 async def music_controls(_, message: Message):
@@ -118,6 +133,7 @@ async def start_all():
 if __name__ == "__main__":
 
     asyncio.get_event_loop().run_until_complete(start_all())
+
 
 
 
