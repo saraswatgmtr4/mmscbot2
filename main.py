@@ -3,6 +3,7 @@ import pyrogram
 print(f"DEBUG: Currently using Pyrogram version: {pyrogram.__version__}")
 import pyrogram
 from pyrogram import Client, filters, idle
+from pyrogram.types import Message
 
 # --- MONKEY PATCH START (Fixes GroupcallForbidden Error) ---
 import pyrogram.errors
@@ -144,6 +145,7 @@ async def start_all():
 if __name__ == "__main__":
 
     asyncio.get_event_loop().run_until_complete(start_all())
+
 
 
 
