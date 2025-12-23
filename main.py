@@ -5,9 +5,16 @@ from pytgcalls import idle  # Import idle from here now
 import config
 # Initialize Clients
 bot = Client("Bot", config.API_ID, config.API_HASH, bot_token=config.BOT_TOKEN)
-assistant = Client("Assistant", config.API_ID, config.API_HASH, session_string=config.SESSION_NAME)
-call_py = PyTgCalls(assistant)
 
+from pyrogram import Client
+from pytgcalls import PyTgCalls
+import config
+
+# The assistant is your USER account (needs String Session)
+assistant = Client("Assistant", config.API_ID, config.API_HASH, session_string=config.SESSION_NAME)
+
+# Link PyTgCalls to the assistant
+call_py = PyTgCalls(assistant)
 
 # --- HELPERS ---
 def get_btns(extra=None):
@@ -133,6 +140,7 @@ async def start_all():
 if __name__ == "__main__":
 
     asyncio.get_event_loop().run_until_complete(start_all())
+
 
 
 
