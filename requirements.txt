@@ -1,0 +1,6 @@
+pyrogram
+tgcalls
+py-tgcalls
+yt-dlp
+ffmpeg-python
+python-dotenv
