@@ -1,20 +1,26 @@
 #iski ma kaaaaaaa
 import pyrogram
 print(f"DEBUG: Currently using Pyrogram version: {pyrogram.__version__}")
-import asyncio
-import os
-import yt_dlp
+import pyrogram
 from pyrogram import Client, filters, idle
-from pytgcalls import PyTgCalls
-import config
-from pyrogram import Client, filters, idle
+
+# --- MONKEY PATCH START (Fixes GroupcallForbidden Error) ---
+import pyrogram.errors
+if not hasattr(pyrogram.errors, "GroupcallForbidden"):
+    pyrogram.errors.GroupcallForbidden = type("GroupcallForbidden", (Exception,), {})
+# --- MONKEY PATCH END ---
+
 from pytgcalls import PyTgCalls
 import config
 
+# Verification Line
+print(f"DEBUG: Using Pyrogram {pyrogram.__version__}")
+
+# Initialize Clients
 bot = Client("Bot", config.API_ID, config.API_HASH, bot_token=config.BOT_TOKEN)
 assistant = Client("Assistant", config.API_ID, config.API_HASH, session_string=config.SESSION_NAME)
+
 call_py = PyTgCalls(assistant)
-# --- HELPERS ---
 def get_btns(extra=None):
     btns = [[InlineKeyboardButton("📢 Channel", url=config.CHANNEL_LINK)]]
     if extra: btns.insert(0, extra)
@@ -138,6 +144,7 @@ async def start_all():
 if __name__ == "__main__":
 
     asyncio.get_event_loop().run_until_complete(start_all())
+
 
 
 
