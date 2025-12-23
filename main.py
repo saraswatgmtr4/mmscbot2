@@ -1,5 +1,6 @@
 #iski ma kaaaaaaa
 import pyrogram
+import asyncio 
 print(f"DEBUG: Currently using Pyrogram version: {pyrogram.__version__}")
 import pyrogram
 from pyrogram import Client, filters, idle
@@ -145,6 +146,7 @@ async def start_all():
 if __name__ == "__main__":
 
     asyncio.get_event_loop().run_until_complete(start_all())
+
 
 
 
