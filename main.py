@@ -1,20 +1,28 @@
-from pyrogram import Client
+import asyncio
+import os
+import yt_dlp
+from pyrogram import Client, filters, idle
 from pytgcalls import PyTgCalls
 import config
 
-# Initialize Clients
-bot = Client("Bot", config.API_ID, config.API_HASH, bot_token=config.BOT_TOKEN)
+# 1. Initialize the Bot (The one that handles /commands)
+bot = Client(
+    "MusicBot",
+    api_id=config.API_ID,
+    api_hash=config.API_HASH,
+    bot_token=config.BOT_TOKEN
+)
 
-from pyrogram import Client
-from pytgcalls import PyTgCalls
-import config
+# 2. Initialize the Assistant (The User Account that joins VC)
+assistant = Client(
+    "Assistant",
+    api_id=config.API_ID,
+    api_hash=config.API_HASH,
+    session_string=config.SESSION_NAME
+)
 
-# The assistant is your USER account (needs String Session)
-assistant = Client("Assistant", config.API_ID, config.API_HASH, session_string=config.SESSION_NAME)
-
-# Link PyTgCalls to the assistant
+# 3. Initialize PyTgCalls and link it to the Assistant
 call_py = PyTgCalls(assistant)
-
 # --- HELPERS ---
 def get_btns(extra=None):
     btns = [[InlineKeyboardButton("📢 Channel", url=config.CHANNEL_LINK)]]
