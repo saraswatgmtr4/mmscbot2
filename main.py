@@ -1,8 +1,7 @@
-import asyncio, os, yt_dlp
-from pyrogram import Client, filters, idle
+from pyrogram import Client
 from pytgcalls import PyTgCalls
-from pytgcalls import idle  # Import idle from here now
 import config
+
 # Initialize Clients
 bot = Client("Bot", config.API_ID, config.API_HASH, bot_token=config.BOT_TOKEN)
 
@@ -140,6 +139,7 @@ async def start_all():
 if __name__ == "__main__":
 
     asyncio.get_event_loop().run_until_complete(start_all())
+
 
 
 
