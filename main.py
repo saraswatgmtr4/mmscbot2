@@ -123,6 +123,31 @@ async def play_cmd(client, message: Message):
             await m.edit("❌ **Streaming Error:** FFmpeg/ffprobe not found on server.\n\n*Tip: Add ffmpeg to your Railway variables.*")
         else:
             await m.edit(f"❌ **Streaming Error:** {e}")
+@bot.on_callback_query()
+async def cb_handler(client, query):
+    chat_id = query.message.chat.id
+    
+    if query.data == "pause":
+        try:
+            await call_py.pause_stream(chat_id)
+            await query.answer("⏸ Paused")
+        except:
+            await query.answer("❌ Nothing is playing", show_alert=True)
+            
+    elif query.data == "resume":
+        try:
+            await call_py.resume_stream(chat_id)
+            await query.answer("▶️ Resumed")
+        except:
+            await query.answer("❌ Nothing is paused", show_alert=True)
+            
+    elif query.data == "stop":
+        try:
+            await call_py.leave_call(chat_id)
+            await query.answer("⏹ Stopped")
+            await query.message.edit("⏹ **Streaming stopped by user.**")
+        except:
+            await query.answer("❌ Not in a call", show_alert=True)
 @bot.on_message(filters.command(["pause", "resume", "end", "skip"]) & filters.group)
 async def music_controls(_, message: Message):
     if not await check_admin(message.chat.id, message.from_user.id): 
@@ -208,6 +233,7 @@ if __name__ == "__main__":
         loop.run_until_complete(start_all())
     except KeyboardInterrupt:
         print("Stopping...")
+
 
 
 
