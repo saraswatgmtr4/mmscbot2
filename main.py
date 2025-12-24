@@ -150,23 +150,29 @@ async def start_msg(_, message: Message):
 
 # --- BOOT ---
 async def start_all():
-    await bot.start();
-    await assistant.start();
+    # 1. Start the Bot
+    print("Starting Bot...")
+    await bot.start()
+    
+    # 2. Start the Assistant
+    print("Starting Assistant...")
+    await assistant.start()
+    
+    # 3. Start PyTgCalls
+    print("Starting PyTgCalls...")
     await call_py.start()
-    print("Bot is fully functional!");
+    
+    print("✅ BOT IS ONLINE!")
+    
+    # 4. Keep the bot running
     await idle()
-
+    
+    # 5. Graceful shutdown
+    await bot.stop()
+    await assistant.stop()
 
 if __name__ == "__main__":
-
     asyncio.get_event_loop().run_until_complete(start_all())
-
-
-
-
-
-
-
 
 
 
