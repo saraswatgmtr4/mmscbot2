@@ -55,18 +55,16 @@ async def play_cmd(client, message: Message):
     m = await message.reply("🔄 **Checking Assistant status...**")
 
     # 1. AUTO-INVITE LOGIC
+   # Force the Assistant to join if it's not there
     try:
-        await client.get_chat_member(chat_id, config.ASSISTANT_ID)
+        await assistant.get_chat_member(chat_id, "me")
     except Exception:
-        await m.edit("🎟️ **Assistant not found. Generating invite...**")
         try:
-            invitelink = await client.export_chat_invite_link(chat_id)
-            await assistant.join_chat(invitelink)
-            await m.edit("✅ **Assistant joined successfully!**")
-            await asyncio.sleep(2) # Wait for Telegram to register join
+            invite_link = await bot.export_chat_invite_link(chat_id)
+            await assistant.join_chat(invite_link)
+            await asyncio.sleep(3) # Give Telegram time to update
         except Exception as e:
-            return await m.edit(f"❌ **Failed to invite assistant.**\nMake sure I am Admin!\n`Error: {e}`")
-
+            return await message.reply(f"❌ Assistant failed to join: {e}")
     # 2. SEARCH LOGIC
     await m.edit("🔎 **Searching for song...**")
     try:
@@ -156,35 +154,37 @@ async def download_song(_, message: Message):
     await m.delete()
 
 # --- BOOT ---
+# --- BOOT SECTION ---
 async def start_all():
-    try:
-        print("1. Starting Bot...")
-        await bot.start()
-        print("Bot started successfully!")
-    except Exception as e:
-        print(f"CRITICAL ERROR starting Bot: {e}")
-        return
+    print("1️⃣ Starting Bot...")
+    await bot.start()
+    
+    print("2️⃣ Starting Assistant...")
+    await assistant.start()
+    
+    print("3️⃣ Starting PyTgCalls...")
+    await call_py.start()
 
+    # --- THE CRITICAL FIX: SYNC DATABASE ---
+    print("4️⃣ Syncing Peer Database (Wait a moment)...")
     try:
-        print("2. Starting Assistant...")
-        await assistant.start()
-        print("Assistant started successfully!")
+        # This force-loads the last 30 chats so the Bot/Assistant 'knows' the groups
+        async for dialog in bot.get_dialogs(limit=30):
+            pass
+        async for dialog in assistant.get_dialogs(limit=30):
+            pass
+        print("✅ Peer Database Synced!")
     except Exception as e:
-        print(f"CRITICAL ERROR starting Assistant: {e}")
-        return
+        print(f"⚠️ Sync warning: {e}")
 
-    try:
-        print("3. Starting PyTgCalls...")
-        await call_py.start()
-        print("PyTgCalls started successfully!")
-    except Exception as e:
-        print(f"CRITICAL ERROR starting PyTgCalls: {e}")
-        return
-
-    print("✅ ALL SYSTEMS GO! Bot is now responding to messages.")
+    print("🚀 BOT IS ONLINE AND LISTENING!")
     await idle()
 
 if __name__ == "__main__":
-    asyncio.get_event_loop().run_until_complete(start_all())
-
+    # Using a safer loop handling for Python 3.12
+    loop = asyncio.get_event_loop()
+    try:
+        loop.run_until_complete(start_all())
+    except KeyboardInterrupt:
+        pass
 
