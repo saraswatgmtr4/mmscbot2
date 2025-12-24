@@ -13,13 +13,13 @@ from pytgcalls.types import MediaStream, AudioQuality # Import both from types
 import os
 import shutil
 
-# Manually add the standard Debian/Ubuntu bin paths to the environment
-os.environ["PATH"] += os.pathsep + "/usr/bin" + os.pathsep + "/usr/local/bin"
+# Manually inject the most common Nix/Railway binary paths
+nix_bin_path = "/nix/var/nix/profiles/default/bin"
+if nix_bin_path not in os.environ["PATH"]:
+    os.environ["PATH"] += os.pathsep + nix_bin_path
 
-# Re-check
-print(f"DEBUG: ffmpeg path: {shutil.which('ffmpeg')}")
-print(f"DEBUG: ffprobe path: {shutil.which('ffprobe')}")
-
+# Log the check after path injection
+print(f"DEBUG: Final FFmpeg Check: {shutil.which('ffmpeg')}")
 if not ffmpeg_path or not ffprobe_path:
     print(f"DEBUG: ffmpeg found at {ffmpeg_path}")
     print(f"DEBUG: ffprobe found at {ffprobe_path}")
@@ -249,6 +249,7 @@ if __name__ == "__main__":
         loop.run_until_complete(start_all())
     except KeyboardInterrupt:
         print("Stopping...")
+
 
 
 
