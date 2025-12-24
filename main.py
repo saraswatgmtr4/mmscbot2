@@ -32,9 +32,21 @@ async def check_admin(chat_id, user_id):
 
 # --- MUSIC LOGIC ---
 
-@bot.on_message(filters.command(["play", "playforce"]) & filters.group)
+@bot.on_message(filters.command(["play"]) & filters.group)
 async def play_cmd(client, message: Message):
     chat_id = message.chat.id
+    
+    # --- FORCE RESOLVE START ---
+    try:
+        # We use 'await client.get_chat' to make sure the BOT knows the group
+        await client.get_chat(chat_id)
+        # We use 'await assistant.get_chat' to make sure the ASSISTANT knows the group
+        await assistant.get_chat(chat_id)
+    except Exception:
+        # If it fails, the Assistant probably isn't in the group yet. 
+        # The auto-invite logic below will handle it.
+        pass
+    # --- FORCE RESOLVE END ---
     
     query = " ".join(message.command[1:])
     if not query:
@@ -174,4 +186,5 @@ async def start_all():
 
 if __name__ == "__main__":
     asyncio.get_event_loop().run_until_complete(start_all())
+
 
