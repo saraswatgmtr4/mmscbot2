@@ -48,81 +48,58 @@ async def check_admin(chat_id, user_id):
 
 
 
+
 @bot.on_message(filters.command(["play"]) & filters.group)
 async def play_cmd(client, message: Message):
     chat_id = message.chat.id
-    
-    # 1. PEER RESOLUTION (Ensures Bot/Assistant recognize the group)
-    try:
-        await client.get_chat(chat_id)
-        await assistant.get_chat(chat_id)
-    except:
-        pass
-    
     query = " ".join(message.command[1:])
+    
     if not query:
         return await message.reply("❌ **Usage:** `/play [song name]`")
 
-    m = await message.reply("🔄 **Checking Assistant...**")
+    m = await message.reply("🔎 **Searching...**")
 
-    # 2. AUTO-INVITE LOGIC
-    try:
-        await assistant.get_chat_member(chat_id, "me")
-    except Exception:
-        try:
-            invite_link = await client.export_chat_invite_link(chat_id)
-            await assistant.join_chat(invite_link)
-            await asyncio.sleep(3) 
-        except Exception as e:
-            return await m.edit(f"❌ Assistant failed to join: {e}")
-
-    # 3. SEARCH LOGIC
-    await m.edit("🔎 **Searching...**")
+    # --- 1. SEARCH SECTION ---
     try:
         ydl_opts = {"format": "bestaudio", "quiet": True}
         with yt_dlp.YoutubeDL(ydl_opts) as ytdl:
             info = ytdl.extract_info(f"ytsearch:{query}", download=False)['entries'][0]
             url = info['url']
             title = info['title']
-            duration = info.get('duration', 'Unknown')
     except Exception as e:
         return await m.edit(f"❌ **Search Error:** {e}")
 
-    # 4. START STREAMING (The Fix is Here)
-    await m.edit("🎼 **Starting Stream...**")
+    # --- 2. STREAMING SECTION ---
     try:
-        # We must use AudioPiped so the bot knows to use FFmpeg/ffprobe to process the URL
-       await m.edit("🎼 **Starting Stream...**")
-    try:
+        # Using the correct MediaStream for PyTgCalls v2.x
         await call_py.play(
             chat_id,
             MediaStream(
                 url,
                 audio_parameters=AudioQuality.STUDIO,
-                video_parameters=None # Plays Audio only
+                video_parameters=None
             )
         )
-
         
-        buttons = InlineKeyboardMarkup([
+        # --- 3. UI SECTION ---
+        buttons = InlineKeyboardMarkup(
             [
-                InlineKeyboardButton("⏸ Pause", callback_data="pause"),
-                InlineKeyboardButton("▶️ Resume", callback_data="resume")
-            ],
-            [InlineKeyboardButton("⏹ Stop", callback_data="stop")]
-        ])
+                [
+                    InlineKeyboardButton("⏸ Pause", callback_data="pause"),
+                    InlineKeyboardButton("▶️ Resume", callback_data="resume")
+                ],
+                [
+                    InlineKeyboardButton("⏹ Stop", callback_data="stop")
+                ]
+            ]
+        )
 
         await m.edit(
-            f"🎶 **Now Playing**\n\n📌 **Title:** {title}\n🕒 **Duration:** {duration}s\n👤 **Requested by:** {message.from_user.mention}",
+            f"🎶 **Now Playing**\n\n📌 **Title:** {title}\n👤 **Requested by:** {message.from_user.mention}",
             reply_markup=buttons
         )
-    
     except Exception as e:
-        if "ffprobe" in str(e).lower():
-            await m.edit("❌ **Error:** FFmpeg/ffprobe is not installed on your server.")
-        else:
-            await m.edit(f"❌ **Streaming Error:** {e}")
-
+        await m.edit(f"❌ **Streaming Error:** {e}")
 @bot.on_message(filters.command(["pause", "resume", "end", "skip"]) & filters.group)
 async def music_controls(_, message: Message):
     if not await check_admin(message.chat.id, message.from_user.id): 
@@ -208,6 +185,7 @@ if __name__ == "__main__":
         loop.run_until_complete(start_all())
     except KeyboardInterrupt:
         print("Stopping...")
+
 
 
 
