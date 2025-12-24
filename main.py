@@ -120,10 +120,10 @@ async def play_cmd(client, message: Message):
             reply_markup=buttons
         )
     except Exception as e:
-        if "ffprobe" in str(e).lower():
-            await m.edit("❌ **FFmpeg Error:** Ensure `NIXPACKS_PKGS = ffmpeg` is in Railway variables.")
-        else:
-            await m.edit(f"❌ **Streaming Error:** {e}")
+        # This will print the RAW error so we can see what's actually happening
+        import traceback
+        print(traceback.format_exc()) 
+        await m.edit(f"❌ **Actual Error:** `{str(e)}`")
 @bot.on_callback_query()
 async def cb_handler(client, query):
     chat_id = query.message.chat.id
@@ -234,6 +234,7 @@ if __name__ == "__main__":
         loop.run_until_complete(start_all())
     except KeyboardInterrupt:
         print("Stopping...")
+
 
 
 
