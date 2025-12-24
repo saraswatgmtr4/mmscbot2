@@ -9,8 +9,8 @@ from pyrogram.errors import UserAlreadyParticipant, FloodWait
 import config
 from pyrogram import utils
 import logging 
+from pytgcalls.enums import AudioQuality  # Removed .types
 from pytgcalls.types import MediaStream
-from pytgcalls.types.enums import AudioQuality
 # --- ID RANGE FIX START ---
 logging.getLogger("pyrogram").setLevel(logging.WARNING)
 
@@ -92,12 +92,16 @@ async def play_cmd(client, message: Message):
     await m.edit("🎼 **Starting Stream...**")
     try:
         # We must use AudioPiped so the bot knows to use FFmpeg/ffprobe to process the URL
+       await m.edit("🎼 **Starting Stream...**")
+    try:
         await call_py.play(
-    chat_id,
-    MediaStream(
-        url,
-        video_flags=None # This tells the bot to play Audio only
-    )
+            chat_id,
+            MediaStream(
+                url,
+                audio_parameters=AudioQuality.STUDIO,
+                video_parameters=None # Plays Audio only
+            )
+        )
 )
         
         buttons = InlineKeyboardMarkup([
@@ -112,9 +116,12 @@ async def play_cmd(client, message: Message):
             f"🎶 **Now Playing**\n\n📌 **Title:** {title}\n🕒 **Duration:** {duration}s\n👤 **Requested by:** {message.from_user.mention}",
             reply_markup=buttons
         )
+    
     except Exception as e:
-        # If you still see 'ffprobe not installed', it's a server environment issue
-        await m.edit(f"❌ **Streaming Error:** {e}\n\n*Tip: Ensure FFmpeg is installed on your VPS or Railway settings.*")
+        if "ffprobe" in str(e).lower():
+            await m.edit("❌ **Error:** FFmpeg/ffprobe is not installed on your server.")
+        else:
+            await m.edit(f"❌ **Streaming Error:** {e}")
 
 @bot.on_message(filters.command(["pause", "resume", "end", "skip"]) & filters.group)
 async def music_controls(_, message: Message):
@@ -201,6 +208,7 @@ if __name__ == "__main__":
         loop.run_until_complete(start_all())
     except KeyboardInterrupt:
         print("Stopping...")
+
 
 
 
