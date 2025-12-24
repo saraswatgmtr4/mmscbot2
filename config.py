@@ -14,8 +14,8 @@ OWNER_ID = int(os.getenv("OWNER_ID", "12345678"))
 OWNER_USERNAME = os.getenv("OWNER_USERNAME", "YourUsername")
 SUPPORT_GROUP = os.getenv("SUPPORT_GROUP", "https://t.me/YourGroup")
 CHANNEL_LINK = os.getenv("CHANNEL_LINK", "https://t.me/YourChannel")
-
 # Database (In-Memory for this example)
-queue = {}      # {chat_id: [list_of_songs]}
-playing = {}    # {chat_id: current_song_info}
 afk_users = {}  # {user_id: reason}
+# Inside config.py
+queue = {}  # Format: {chat_id: [song1, song2, ...]}
+playing = {} # Format: {chat_id: current_song_info}
