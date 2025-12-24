@@ -1,5 +1,5 @@
 pyrogram==2.0.106
-tgcrypto
+tgcrypto==1.2.5
 yt-dlp
+pytgcalls==2.1.0
 python-dotenv
-https://github.com/pytgcalls/pytgcalls/archive/refs/tags/v2.0.0.tar.gz
