@@ -1,12 +1,8 @@
 [phases.setup]
-aptPkgs = ["...", "ffmpeg", "python3-pip"]
+nixPkgs = ["python311", "ffmpeg"]
 
-[phases.build]
-cmds = ["...", "pip install -r requirements.txt"]
-
-[variables]
-# This manually tells the system where to look for binaries if PATH fails
-PATH = "/usr/bin:/usr/local/bin:$PATH"
+[phases.install]
+cmds = ["python -m venv .venv", ".venv/bin/pip install -r requirements.txt"]
 
 [start]
 cmd = "python main.py"
