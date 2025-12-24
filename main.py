@@ -44,60 +44,56 @@ async def check_admin(chat_id, user_id):
 
 # --- MUSIC LOGIC ---
 
+from pytgcalls.types import AudioPiped # <--- MAKE SURE TO IMPORT THIS
+
 @bot.on_message(filters.command(["play"]) & filters.group)
 async def play_cmd(client, message: Message):
     chat_id = message.chat.id
     
-    # --- FORCE RESOLVE START ---
+    # 1. PEER RESOLUTION (Ensures Bot/Assistant recognize the group)
     try:
-        # We use 'await client.get_chat' to make sure the BOT knows the group
         await client.get_chat(chat_id)
-        # We use 'await assistant.get_chat' to make sure the ASSISTANT knows the group
         await assistant.get_chat(chat_id)
-    except Exception:
-        # If it fails, the Assistant probably isn't in the group yet. 
-        # The auto-invite logic below will handle it.
+    except:
         pass
-    # --- FORCE RESOLVE END ---
     
     query = " ".join(message.command[1:])
     if not query:
         return await message.reply("❌ **Usage:** `/play [song name]`")
 
-    m = await message.reply("🔄 **Checking Assistant status...**")
+    m = await message.reply("🔄 **Checking Assistant...**")
 
-    # 1. AUTO-INVITE LOGIC
-   # Force the Assistant to join if it's not there
+    # 2. AUTO-INVITE LOGIC
     try:
         await assistant.get_chat_member(chat_id, "me")
     except Exception:
         try:
-            invite_link = await bot.export_chat_invite_link(chat_id)
+            invite_link = await client.export_chat_invite_link(chat_id)
             await assistant.join_chat(invite_link)
-            await asyncio.sleep(3) # Give Telegram time to update
+            await asyncio.sleep(3) 
         except Exception as e:
-            return await message.reply(f"❌ Assistant failed to join: {e}")
-    # 2. SEARCH LOGIC
-    await m.edit("🔎 **Searching for song...**")
+            return await m.edit(f"❌ Assistant failed to join: {e}")
+
+    # 3. SEARCH LOGIC
+    await m.edit("🔎 **Searching...**")
     try:
         ydl_opts = {"format": "bestaudio", "quiet": True}
         with yt_dlp.YoutubeDL(ydl_opts) as ytdl:
             info = ytdl.extract_info(f"ytsearch:{query}", download=False)['entries'][0]
             url = info['url']
             title = info['title']
-            duration = info['duration']
+            duration = info.get('duration', 'Unknown')
     except Exception as e:
         return await m.edit(f"❌ **Search Error:** {e}")
 
-    # 3. PEER RESOLUTION
+    # 4. START STREAMING (The Fix is Here)
+    await m.edit("🎼 **Starting Stream...**")
     try:
-        await assistant.get_chat(chat_id)
-    except:
-        pass
-
-    # 4. START STREAMING
-    try:
-        await call_py.play(chat_id, url)
+        # We must use AudioPiped so the bot knows to use FFmpeg/ffprobe to process the URL
+        await call_py.play(
+            chat_id,
+            AudioPiped(url)
+        )
         
         buttons = InlineKeyboardMarkup([
             [
@@ -112,7 +108,8 @@ async def play_cmd(client, message: Message):
             reply_markup=buttons
         )
     except Exception as e:
-        await m.edit(f"❌ **Streaming Error:** {e}")
+        # If you still see 'ffprobe not installed', it's a server environment issue
+        await m.edit(f"❌ **Streaming Error:** {e}\n\n*Tip: Ensure FFmpeg is installed on your VPS or Railway settings.*")
 
 @bot.on_message(filters.command(["pause", "resume", "end", "skip"]) & filters.group)
 async def music_controls(_, message: Message):
@@ -199,6 +196,7 @@ if __name__ == "__main__":
         loop.run_until_complete(start_all())
     except KeyboardInterrupt:
         print("Stopping...")
+
 
 
 
