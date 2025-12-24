@@ -67,44 +67,35 @@ from pytgcalls.types.input_stream import AudioPiped
 from pytgcalls.types.input_stream.quality import HighQualityAudio
 
 @bot.on_message(filters.command(["play"]) & filters.group)
-async def play_cmd(client, message: Message):
+@bot.on_message(filters.command(["play"]) & filters.group)
+async def play_cmd(client: bot, message: Message):
     chat_id = message.chat.id
-    
-    # Simple sync check
-    try:
-        await client.get_chat(chat_id)
-    except:
-        pass
-    
     query = " ".join(message.command[1:])
+    
     if not query:
         return await message.reply("❌ **Usage:** `/play [song name]`")
 
     m = await message.reply("🔄 **Processing...**")
 
-    # 1. SEARCH LOGIC (Using cookies.txt)
+    # 1. Search Logic
     try:
         ydl_opts = {
             "format": "bestaudio/best",
             "quiet": True,
             "no_warnings": True,
-            "nocheckcertificate": True,
             "cookiefile": "cookies.txt", 
             "default_search": "ytsearch",
+            "nocheckcertificate": True,
         }
         
-        if not os.path.exists("cookies.txt"):
-            return await m.edit("❌ **Error:** `cookies.txt` not found in main folder.")
-
         with yt_dlp.YoutubeDL(ydl_opts) as ytdl:
             info = ytdl.extract_info(f"ytsearch:{query}", download=False)['entries'][0]
             url = info['url']
             title = info['title']
     except Exception as e:
-        return await m.edit(f"❌ **Search Error:** {e}")
+        return await m.edit(f"❌ **Search Error:** {str(e)}")
 
-    # 2. STREAMING LOGIC (Using AudioPiped for v2.0.0)
-    await m.edit("🎼 **Starting Stream...**")
+    # 2. Streaming Logic
     try:
         await call_py.play(
             chat_id,
@@ -114,24 +105,19 @@ async def play_cmd(client, message: Message):
             )
         )
         
-        # 3. INTERFACE
         buttons = InlineKeyboardMarkup([
-            [
-                InlineKeyboardButton("⏸ Pause", callback_data="pause"),
-                InlineKeyboardButton("▶️ Resume", callback_data="resume")
-            ],
+            [InlineKeyboardButton("⏸ Pause", callback_data="pause"),
+             InlineKeyboardButton("▶️ Resume", callback_data="resume")],
             [InlineKeyboardButton("⏹ Stop", callback_data="stop")]
         ])
 
         await m.edit(
-            f"🎶 **Now Playing**\n\n"
-            f"📌 **Title:** {title[:45]}...\n"
-            f"👤 **Requested by:** {message.from_user.mention if message.from_user else 'User'}",
+            f"🎶 **Now Playing:** {title[:40]}...\n👤 **By:** {message.from_user.mention}",
             reply_markup=buttons
         )
     except Exception as e:
         print(traceback.format_exc())
-        await m.edit(f"❌ **Streaming Error:** `{str(e)}`")
+        await m.edit(f"❌ **Stream Error:** `{str(e)}`")
 @bot.on_callback_query()
 async def cb_handler(client, query):
     chat_id = query.message.chat.id
@@ -242,6 +228,7 @@ if __name__ == "__main__":
         loop.run_until_complete(start_all())
     except KeyboardInterrupt:
         print("Stopping...")
+
 
 
 
