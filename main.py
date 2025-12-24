@@ -4,13 +4,12 @@ import pyrogram
 import yt_dlp
 from pyrogram import Client, filters, idle
 from pyrogram.types import Message, InlineKeyboardMarkup, InlineKeyboardButton
-from pytgcalls import PyTgCalls
 from pyrogram.errors import UserAlreadyParticipant, FloodWait
 import config
 from pyrogram import utils
 import logging 
-from pytgcalls.enums import AudioQuality  # Removed .types
-from pytgcalls.types import MediaStream
+from pytgcalls import PyTgCalls
+from pytgcalls.types import MediaStream, AudioQuality # Import both from types
 # --- ID RANGE FIX START ---
 logging.getLogger("pyrogram").setLevel(logging.WARNING)
 
@@ -185,6 +184,7 @@ if __name__ == "__main__":
         loop.run_until_complete(start_all())
     except KeyboardInterrupt:
         print("Stopping...")
+
 
 
 
