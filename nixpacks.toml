@@ -2,7 +2,8 @@
 nixPkgs = ["python311", "ffmpeg", "gcc"]
 
 [phases.install]
-cmds = ["pip install -r requirements.txt"]
+# Use python3 specifically to avoid "executable not found"
+cmds = ["python3 -m venv /app/.venv", "/app/.venv/bin/pip install -r requirements.txt"]
 
 [start]
-cmd = "python main.py"
+cmd = "/app/.venv/bin/python3 main.py"
