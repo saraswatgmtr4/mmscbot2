@@ -10,18 +10,15 @@ import config
 from pyrogram import utils
 
 # --- ID RANGE FIX START ---
-def get_peer_type_new(peer_id: int) -> str:
-    peer_id_str = str(peer_id)
-    if not peer_id_str.startswith("-"):
-        return "user"
-    elif peer_id_str.startswith("-100"):
-        return "channel"
-    else:
-        return "chat"
+logging.getLogger("pyrogram").setLevel(logging.WARNING)
 
-# Apply the patch to Pyrogram's internal utility
+# Move your patch here (ensure it's BEFORE the clients start)
+from pyrogram import utils
+def get_peer_type_new(peer_id: int) -> str:
+    pid = str(peer_id)
+    if not pid.startswith("-"): return "user"
+    return "channel" if pid.startswith("-100") else "chat"
 utils.get_peer_type = get_peer_type_new
-# --- ID RANGE FIX END ---
 # --- MONKEY PATCH START (Fixes GroupcallForbidden Error for 2025) ---
 import pyrogram.errors
 if not hasattr(pyrogram.errors, "GroupcallForbidden"):
@@ -29,8 +26,9 @@ if not hasattr(pyrogram.errors, "GroupcallForbidden"):
 # --- MONKEY PATCH END ---
 
 # Initialize Clients
-bot = Client("Bot", config.API_ID, config.API_HASH, bot_token=config.BOT_TOKEN)
-assistant = Client("Assistant", config.API_ID, config.API_HASH, session_string=config.SESSION_NAME)
+# Use distinct names so they create separate 'bot.session' and 'assistant.session' files
+bot = Client("bot_session", config.API_ID, config.API_HASH, bot_token=config.BOT_TOKEN)
+assistant = Client("assistant_session", config.API_ID, config.API_HASH, session_string=config.SESSION_NAME)
 call_py = PyTgCalls(assistant)
 
 # --- HELPER FUNCTIONS ---
@@ -201,5 +199,6 @@ if __name__ == "__main__":
         asyncio.run(start_all())
     except KeyboardInterrupt:
         print("Stopping...")
+
 
 
