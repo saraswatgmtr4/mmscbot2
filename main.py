@@ -51,54 +51,78 @@ async def check_admin(chat_id, user_id):
 @bot.on_message(filters.command(["play"]) & filters.group)
 async def play_cmd(client, message: Message):
     chat_id = message.chat.id
-    query = " ".join(message.command[1:])
     
+    # 1. PEER RESOLUTION (Ensures Assistant/Bot recognize the group)
+    try:
+        await client.get_chat(chat_id)
+        await assistant.get_chat(chat_id)
+    except:
+        pass
+    
+    # 2. INPUT VALIDATION
+    query = " ".join(message.command[1:])
     if not query:
-        return await message.reply("❌ **Usage:** `/play [song name]`")
+        return await message.reply("❌ **Usage:** `/play [song name or link]`")
 
-    m = await message.reply("🔎 **Searching...**")
+    m = await message.reply("🔄 **Processing...**")
 
-    # --- 1. SEARCH SECTION ---
+    # 3. AUTO-INVITE ASSISTANT
+    try:
+        await assistant.get_chat_member(chat_id, "me")
+    except Exception:
+        try:
+            invite_link = await client.export_chat_invite_link(chat_id)
+            await assistant.join_chat(invite_link)
+        except Exception as e:
+            return await m.edit(f"❌ **Assistant join failed:** {e}\n\n*Make sure I am Admin with Invite Users permission.*")
+
+    # 4. SEARCH & EXTRACT (YouTube)
+    await m.edit("🔎 **Searching for your song...**")
     try:
         ydl_opts = {"format": "bestaudio", "quiet": True}
         with yt_dlp.YoutubeDL(ydl_opts) as ytdl:
             info = ytdl.extract_info(f"ytsearch:{query}", download=False)['entries'][0]
             url = info['url']
             title = info['title']
+            duration = info.get('duration', 0)
     except Exception as e:
         return await m.edit(f"❌ **Search Error:** {e}")
 
-    # --- 2. STREAMING SECTION ---
+    # 5. START STREAMING
+    await m.edit("🎼 **Starting Voice Chat...**")
     try:
-        # Using the correct MediaStream for PyTgCalls v2.x
+        # Optimized for PyTgCalls v2.2.8 (Audio Only)
         await call_py.play(
             chat_id,
             MediaStream(
                 url,
-                audio_parameters=AudioQuality.STUDIO,
-                video_parameters=None
+                audio_parameters=AudioQuality.STUDIO
             )
         )
         
-        # --- 3. UI SECTION ---
-        buttons = InlineKeyboardMarkup(
+        # 6. UI INTERFACE
+        buttons = InlineKeyboardMarkup([
             [
-                [
-                    InlineKeyboardButton("⏸ Pause", callback_data="pause"),
-                    InlineKeyboardButton("▶️ Resume", callback_data="resume")
-                ],
-                [
-                    InlineKeyboardButton("⏹ Stop", callback_data="stop")
-                ]
+                InlineKeyboardButton("⏸ Pause", callback_data="pause"),
+                InlineKeyboardButton("▶️ Resume", callback_data="resume")
+            ],
+            [
+                InlineKeyboardButton("⏹ Stop", callback_data="stop")
             ]
-        )
+        ])
 
         await m.edit(
-            f"🎶 **Now Playing**\n\n📌 **Title:** {title}\n👤 **Requested by:** {message.from_user.mention}",
+            f"🎶 **Now Playing**\n\n"
+            f"📌 **Title:** {title[:40]}...\n"
+            f"🕒 **Duration:** {duration}s\n"
+            f"👤 **Requested by:** {message.from_user.mention}",
             reply_markup=buttons
         )
     except Exception as e:
-        await m.edit(f"❌ **Streaming Error:** {e}")
+        if "ffprobe" in str(e).lower():
+            await m.edit("❌ **Streaming Error:** FFmpeg/ffprobe not found on server.\n\n*Tip: Add ffmpeg to your Railway variables.*")
+        else:
+            await m.edit(f"❌ **Streaming Error:** {e}")
 @bot.on_message(filters.command(["pause", "resume", "end", "skip"]) & filters.group)
 async def music_controls(_, message: Message):
     if not await check_admin(message.chat.id, message.from_user.id): 
@@ -184,6 +208,7 @@ if __name__ == "__main__":
         loop.run_until_complete(start_all())
     except KeyboardInterrupt:
         print("Stopping...")
+
 
 
 
