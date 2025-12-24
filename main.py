@@ -63,14 +63,16 @@ async def check_admin(chat_id, user_id):
 
 
 
+from pytgcalls.types.input_stream import AudioPiped
+from pytgcalls.types.input_stream.quality import HighQualityAudio
+
 @bot.on_message(filters.command(["play"]) & filters.group)
 async def play_cmd(client, message: Message):
     chat_id = message.chat.id
     
-    # Ensure Assistant and Bot are in sync with the chat
+    # Simple sync check
     try:
         await client.get_chat(chat_id)
-        await assistant.get_chat(chat_id)
     except:
         pass
     
@@ -80,49 +82,45 @@ async def play_cmd(client, message: Message):
 
     m = await message.reply("🔄 **Processing...**")
 
-    # 1. SEARCH LOGIC (With Cookie Support)
-    await m.edit("🔎 **Searching with YouTube Cookies...**")
+    # 1. SEARCH LOGIC (Using cookies.txt)
     try:
         ydl_opts = {
             "format": "bestaudio/best",
             "quiet": True,
             "no_warnings": True,
             "nocheckcertificate": True,
-            # Link the cookies.txt you uploaded to GitHub/Railway
             "cookiefile": "cookies.txt", 
             "default_search": "ytsearch",
         }
         
-        # Safety check: Verify the cookie file is present on the server
         if not os.path.exists("cookies.txt"):
-            return await m.edit("❌ **Error:** `cookies.txt` not found. Please ensure it's in your main folder.")
+            return await m.edit("❌ **Error:** `cookies.txt` not found in main folder.")
 
         with yt_dlp.YoutubeDL(ydl_opts) as ytdl:
             info = ytdl.extract_info(f"ytsearch:{query}", download=False)['entries'][0]
             url = info['url']
             title = info['title']
-            duration = info.get('duration', 0)
     except Exception as e:
         return await m.edit(f"❌ **Search Error:** {e}")
 
-    # 2. STREAMING LOGIC (PyTgCalls v2.2.8+)
-    await m.edit("🎼 **Starting Voice Chat Stream...**")
+    # 2. STREAMING LOGIC (Using AudioPiped for v2.0.0)
+    await m.edit("🎼 **Starting Stream...**")
     try:
         await call_py.play(
-    chat_id,
-    MediaStream(
-        url,
-        audio_parameters=AudioQuality.STUDIO))
+            chat_id,
+            AudioPiped(
+                url,
+                HighQualityAudio()
+            )
+        )
         
-        # 3. INTERFACE (Buttons)
+        # 3. INTERFACE
         buttons = InlineKeyboardMarkup([
             [
                 InlineKeyboardButton("⏸ Pause", callback_data="pause"),
                 InlineKeyboardButton("▶️ Resume", callback_data="resume")
             ],
-            [
-                InlineKeyboardButton("⏹ Stop", callback_data="stop")
-            ]
+            [InlineKeyboardButton("⏹ Stop", callback_data="stop")]
         ])
 
         await m.edit(
@@ -132,10 +130,8 @@ async def play_cmd(client, message: Message):
             reply_markup=buttons
         )
     except Exception as e:
-        # This will print the RAW error so we can see what's actually happening
-        import traceback
-        print(traceback.format_exc()) 
-        await m.edit(f"❌ **Actual Error:** `{str(e)}`")
+        print(traceback.format_exc())
+        await m.edit(f"❌ **Streaming Error:** `{str(e)}`")
 @bot.on_callback_query()
 async def cb_handler(client, query):
     chat_id = query.message.chat.id
@@ -246,6 +242,7 @@ if __name__ == "__main__":
         loop.run_until_complete(start_all())
     except KeyboardInterrupt:
         print("Stopping...")
+
 
 
 
