@@ -67,8 +67,7 @@ from pytgcalls.types.input_stream import AudioPiped
 from pytgcalls.types.input_stream.quality import HighQualityAudio
 
 @bot.on_message(filters.command(["play"]) & filters.group)
-@bot.on_message(filters.command(["play"]) & filters.group)
-async def play_cmd(client: bot, message: Message):
+async def play_cmd(client, message: Message):
     chat_id = message.chat.id
     query = " ".join(message.command[1:])
     
@@ -99,9 +98,9 @@ async def play_cmd(client: bot, message: Message):
     try:
         await call_py.play(
             chat_id,
-            AudioPiped(
+            MediaStream(
                 url,
-                HighQualityAudio()
+                audio_parameters=AudioQuality.STUDIO
             )
         )
         
@@ -112,7 +111,7 @@ async def play_cmd(client: bot, message: Message):
         ])
 
         await m.edit(
-            f"🎶 **Now Playing:** {title[:40]}...\n👤 **By:** {message.from_user.mention}",
+            f"🎶 **Now Playing:** {title[:40]}...\n👤 **By:** {message.from_user.mention if message.from_user else 'User'}",
             reply_markup=buttons
         )
     except Exception as e:
@@ -228,6 +227,7 @@ if __name__ == "__main__":
         loop.run_until_complete(start_all())
     except KeyboardInterrupt:
         print("Stopping...")
+
 
 
 
