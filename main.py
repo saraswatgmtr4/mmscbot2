@@ -35,6 +35,8 @@ async def check_admin(chat_id, user_id):
 
 
 # --- MUSIC LOGIC ---
+from pyrogram.types import InlineKeyboardMarkup, InlineKeyboardButton # Ensure these are imported
+
 @bot.on_message(filters.command(["play", "playforce"]) & filters.group)
 async def play_cmd(_, message: Message):
     query = " ".join(message.command[1:])
@@ -44,33 +46,45 @@ async def play_cmd(_, message: Message):
     m = await message.reply("🔎 Searching...")
     
     try:
-        # 1. Search for the song
+        # 1. Force Assistant to recognize the chat (Fixes Peer ID Invalid)
+        try:
+            await assistant.get_chat(message.chat.id)
+        except Exception:
+            # If the assistant isn't in the group, this helps it "see" the ID
+            pass
+
+        # 2. Search for the song
         with yt_dlp.YoutubeDL({"format": "bestaudio", "quiet": True}) as ytdl:
             info = ytdl.extract_info(f"ytsearch:{query}", download=False)['entries'][0]
             url, title, duration = info['url'], info['title'], info['duration']
 
-        # 2. Handle 'playforce' logic
+        # 3. Handle 'playforce' logic
         if message.command[0] == "playforce":
-            config.queue[message.chat.id] = []  # Clear queue
+            config.queue[message.chat.id] = [] 
 
-        # 3. Start Playing (2025 v2.x direct-play syntax)
-        # Note: All lines below this are indented 4 spaces from the 'try'
+        # 4. Start Playing
+        # Using the direct URL string for Py-TgCalls v2.x
         await call_py.play(message.chat.id, url)
         
-        # 4. Update tracking state
+        # 5. Update tracking state
         config.playing[message.chat.id] = {"url": url, "title": title}
 
-        # 5. Build Buttons
-        controls = [
-            [InlineKeyboardButton("⏸ Pause", callback_data="pause"),
-             InlineKeyboardButton("▶️ Resume", callback_data="resume")],
-            [InlineKeyboardButton("⏭ Skip", callback_data="skip"), 
-             InlineKeyboardButton("⏹ End", callback_data="stop")]
+        # 6. Build Buttons
+        # Note: Use InlineKeyboardMarkup for the reply_markup
+        buttons = [
+            [
+                InlineKeyboardButton("⏸ Pause", callback_data="pause"),
+                InlineKeyboardButton("▶️ Resume", callback_data="resume")
+            ],
+            [
+                InlineKeyboardButton("⏭ Skip", callback_data="skip"), 
+                InlineKeyboardButton("⏹ End", callback_data="stop")
+            ]
         ]
         
         await m.edit(
             f"🎶 **Playing:** {title}\n🕒 **Duration:** {duration}s",
-            reply_markup=get_btns(controls[0] + controls[1])
+            reply_markup=InlineKeyboardMarkup(buttons)
         )
 
     except Exception as e:
@@ -146,6 +160,7 @@ async def start_all():
 if __name__ == "__main__":
 
     asyncio.get_event_loop().run_until_complete(start_all())
+
 
 
 
