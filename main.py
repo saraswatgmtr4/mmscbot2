@@ -38,57 +38,77 @@ async def check_admin(chat_id, user_id):
 from pyrogram.types import InlineKeyboardMarkup, InlineKeyboardButton # Ensure these are imported
 
 @bot.on_message(filters.command(["play", "playforce"]) & filters.group)
-async def play_cmd(_, message: Message):
+from pyrogram import filters
+from pyrogram.types import Message, InlineKeyboardMarkup, InlineKeyboardButton
+from pyrogram.errors import UserAlreadyParticipant, FloodWait
+import asyncio
+import config
+
+@bot.on_message(filters.command(["play"]) & filters.group)
+async def play_cmd(client, message: Message):
+    chat_id = message.chat.id
+    user_id = message.from_user.id
+    
+    # 1. Check if a song name was provided
     query = " ".join(message.command[1:])
     if not query:
-        return await message.reply("Give me a song name!")
+        return await message.reply("❌ **Usage:** `/play [song name]`")
 
-    m = await message.reply("🔎 Searching...")
-    
+    m = await message.reply("🔄 **Checking Assistant status...**")
+
+    # 2. AUTO-INVITE LOGIC: Check if Assistant is in the group
     try:
-        # 1. Force Assistant to recognize the chat (Fixes Peer ID Invalid)
+        await client.get_chat_member(chat_id, config.ASSISTANT_ID) # Define ASSISTANT_ID in config
+    except Exception:
+        # Assistant not found, let's invite it
+        await m.edit("🎟️ **Assistant not found. Generating invite...**")
         try:
-            await assistant.get_chat(message.chat.id)
-        except Exception:
-            # If the assistant isn't in the group, this helps it "see" the ID
-            pass
+            invitelink = await client.export_chat_invite_link(chat_id)
+            # Assistant account joins via the link
+            await assistant.join_chat(invitelink)
+            await m.edit("✅ **Assistant joined successfully!**")
+        except Exception as e:
+            return await m.edit(f"❌ **Failed to invite assistant.**\nMake sure I am Admin!\n`Error: {e}`")
 
-        # 2. Search for the song
+    # 3. SEARCH LOGIC
+    await m.edit("🔎 **Searching for song...**")
+    try:
         with yt_dlp.YoutubeDL({"format": "bestaudio", "quiet": True}) as ytdl:
             info = ytdl.extract_info(f"ytsearch:{query}", download=False)['entries'][0]
-            url, title, duration = info['url'], info['title'], info['duration']
+            url = info['url']
+            title = info['title']
+            duration = info['duration']
+            thumbnail = info.get('thumbnail')
+    except Exception as e:
+        return await m.edit(f"❌ **Search Error:** {e}")
 
-        # 3. Handle 'playforce' logic
-        if message.command[0] == "playforce":
-            config.queue[message.chat.id] = [] 
+    # 4. PEER RESOLUTION (Final fix for 'ID not found')
+    try:
+        await assistant.get_chat(chat_id)
+    except Exception:
+        pass
 
-        # 4. Start Playing
-        # Using the direct URL string for Py-TgCalls v2.x
-        await call_py.play(message.chat.id, url)
+    # 5. START STREAMING
+    try:
+        await call_py.play(chat_id, url)
         
-        # 5. Update tracking state
-        config.playing[message.chat.id] = {"url": url, "title": title}
-
-        # 6. Build Buttons
-        # Note: Use InlineKeyboardMarkup for the reply_markup
-        buttons = [
+        # Buttons for controls
+        buttons = InlineKeyboardMarkup([
             [
                 InlineKeyboardButton("⏸ Pause", callback_data="pause"),
                 InlineKeyboardButton("▶️ Resume", callback_data="resume")
             ],
             [
-                InlineKeyboardButton("⏭ Skip", callback_data="skip"), 
-                InlineKeyboardButton("⏹ End", callback_data="stop")
+                InlineKeyboardButton("⏹ Stop", callback_data="stop")
             ]
-        ]
-        
-        await m.edit(
-            f"🎶 **Playing:** {title}\n🕒 **Duration:** {duration}s",
-            reply_markup=InlineKeyboardMarkup(buttons)
-        )
+        ])
 
+        await m.edit(
+            f"🎶 **Now Playing**\n\n📌 **Title:** {title}\n🕒 **Duration:** {duration}s\n👤 **Requested by:** {message.from_user.mention}",
+            reply_markup=buttons
+        )
     except Exception as e:
-        await m.edit(f"❌ **Error:** {e}")
+        await m.edit(f"❌ **Streaming Error:** {e}")
 
 @bot.on_message(filters.command(["pause", "resume", "end", "skip"]) & filters.group)
 async def music_controls(_, message: Message):
@@ -173,6 +193,7 @@ async def start_all():
 
 if __name__ == "__main__":
     asyncio.get_event_loop().run_until_complete(start_all())
+
 
 
 
