@@ -1,5 +1,5 @@
 [phases.setup]
-nixPkgs = ["python310", "ffmpeg", "gcc", "stdenv"]
+nixPkgs = ["python310", "ffmpeg", "gcc"]
 
 [phases.install]
 cmds = ["python3 -m venv /app/.venv", "/app/.venv/bin/pip install --upgrade pip", "/app/.venv/bin/pip install -r requirements.txt"]
