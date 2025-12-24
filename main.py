@@ -102,7 +102,7 @@ async def play_cmd(client, message: Message):
                 video_parameters=None # Plays Audio only
             )
         )
-)
+
         
         buttons = InlineKeyboardMarkup([
             [
@@ -208,6 +208,7 @@ if __name__ == "__main__":
         loop.run_until_complete(start_all())
     except KeyboardInterrupt:
         print("Stopping...")
+
 
 
 
