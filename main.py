@@ -13,9 +13,12 @@ from pytgcalls.types import MediaStream, AudioQuality # Import both from types
 import os
 import shutil
 
-# This forces the bot to find the path of ffmpeg/ffprobe
-ffmpeg_path = shutil.which("ffmpeg")
-ffprobe_path = shutil.which("ffprobe")
+# Manually add the standard Debian/Ubuntu bin paths to the environment
+os.environ["PATH"] += os.pathsep + "/usr/bin" + os.pathsep + "/usr/local/bin"
+
+# Re-check
+print(f"DEBUG: ffmpeg path: {shutil.which('ffmpeg')}")
+print(f"DEBUG: ffprobe path: {shutil.which('ffprobe')}")
 
 if not ffmpeg_path or not ffprobe_path:
     print(f"DEBUG: ffmpeg found at {ffmpeg_path}")
@@ -246,6 +249,7 @@ if __name__ == "__main__":
         loop.run_until_complete(start_all())
     except KeyboardInterrupt:
         print("Stopping...")
+
 
 
 
