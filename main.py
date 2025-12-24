@@ -10,6 +10,18 @@ from pyrogram import utils
 import logging 
 from pytgcalls import PyTgCalls
 from pytgcalls.types import MediaStream, AudioQuality # Import both from types
+import os
+import shutil
+
+# This forces the bot to find the path of ffmpeg/ffprobe
+ffmpeg_path = shutil.which("ffmpeg")
+ffprobe_path = shutil.which("ffprobe")
+
+if not ffmpeg_path or not ffprobe_path:
+    print(f"DEBUG: ffmpeg found at {ffmpeg_path}")
+    print(f"DEBUG: ffprobe found at {ffprobe_path}")
+    # If Railway installed it elsewhere, we manually add common Nix paths
+    os.environ["PATH"] += os.pathsep + "/usr/bin" + os.pathsep + "/usr/local/bin"
 # --- ID RANGE FIX START ---
 logging.getLogger("pyrogram").setLevel(logging.WARNING)
 
@@ -234,6 +246,7 @@ if __name__ == "__main__":
         loop.run_until_complete(start_all())
     except KeyboardInterrupt:
         print("Stopping...")
+
 
 
 
