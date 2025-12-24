@@ -9,6 +9,7 @@ from pyrogram.errors import UserAlreadyParticipant, FloodWait
 import config
 from pyrogram import utils
 import logging 
+from pytgcalls.types import MediaStream
 # --- ID RANGE FIX START ---
 logging.getLogger("pyrogram").setLevel(logging.WARNING)
 
@@ -91,9 +92,12 @@ async def play_cmd(client, message: Message):
     try:
         # We must use AudioPiped so the bot knows to use FFmpeg/ffprobe to process the URL
         await call_py.play(
-            chat_id,
-            AudioPiped(url)
-        )
+    chat_id,
+    MediaStream(
+        url,
+        video_flags=None # This tells the bot to play Audio only
+    )
+)
         
         buttons = InlineKeyboardMarkup([
             [
@@ -196,6 +200,7 @@ if __name__ == "__main__":
         loop.run_until_complete(start_all())
     except KeyboardInterrupt:
         print("Stopping...")
+
 
 
 
