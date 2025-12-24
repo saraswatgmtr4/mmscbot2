@@ -1,0 +1,4 @@
+cookies.txt
+config.py
+*.session
+*.session-journal
