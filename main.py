@@ -145,14 +145,33 @@ async def download_song(_, message: Message):
 
 # --- BOOT ---
 async def start_all():
-    print("Starting Bot...")
-    await bot.start()
-    print("Starting Assistant...")
-    await assistant.start()
-    print("Starting PyTgCalls...")
-    await call_py.start()
-    print("✅ BOT IS ONLINE!")
+    try:
+        print("1. Starting Bot...")
+        await bot.start()
+        print("Bot started successfully!")
+    except Exception as e:
+        print(f"CRITICAL ERROR starting Bot: {e}")
+        return
+
+    try:
+        print("2. Starting Assistant...")
+        await assistant.start()
+        print("Assistant started successfully!")
+    except Exception as e:
+        print(f"CRITICAL ERROR starting Assistant: {e}")
+        return
+
+    try:
+        print("3. Starting PyTgCalls...")
+        await call_py.start()
+        print("PyTgCalls started successfully!")
+    except Exception as e:
+        print(f"CRITICAL ERROR starting PyTgCalls: {e}")
+        return
+
+    print("✅ ALL SYSTEMS GO! Bot is now responding to messages.")
     await idle()
 
 if __name__ == "__main__":
     asyncio.get_event_loop().run_until_complete(start_all())
+
