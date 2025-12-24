@@ -10,6 +10,7 @@ import config
 from pyrogram import utils
 import logging 
 from pytgcalls.types import MediaStream
+from pytgcalls.types.enums import AudioQuality
 # --- ID RANGE FIX START ---
 logging.getLogger("pyrogram").setLevel(logging.WARNING)
 
@@ -45,7 +46,7 @@ async def check_admin(chat_id, user_id):
 
 # --- MUSIC LOGIC ---
 
-from pytgcalls.types import AudioPiped # <--- MAKE SURE TO IMPORT THIS
+
 
 @bot.on_message(filters.command(["play"]) & filters.group)
 async def play_cmd(client, message: Message):
@@ -200,6 +201,7 @@ if __name__ == "__main__":
         loop.run_until_complete(start_all())
     except KeyboardInterrupt:
         print("Stopping...")
+
 
 
 
