@@ -7,7 +7,21 @@ from pyrogram.types import Message, InlineKeyboardMarkup, InlineKeyboardButton
 from pytgcalls import PyTgCalls
 from pyrogram.errors import UserAlreadyParticipant, FloodWait
 import config
+from pyrogram import utils
 
+# --- ID RANGE FIX START ---
+def get_peer_type_new(peer_id: int) -> str:
+    peer_id_str = str(peer_id)
+    if not peer_id_str.startswith("-"):
+        return "user"
+    elif peer_id_str.startswith("-100"):
+        return "channel"
+    else:
+        return "chat"
+
+# Apply the patch to Pyrogram's internal utility
+utils.get_peer_type = get_peer_type_new
+# --- ID RANGE FIX END ---
 # --- MONKEY PATCH START (Fixes GroupcallForbidden Error for 2025) ---
 import pyrogram.errors
 if not hasattr(pyrogram.errors, "GroupcallForbidden"):
@@ -165,13 +179,14 @@ async def start_all():
     print("3️⃣ Starting PyTgCalls...")
     await call_py.start()
 
-    # --- THE CRITICAL FIX: SYNC DATABASE ---
-    print("4️⃣ Syncing Peer Database (Wait a moment)...")
+    # --- 2. THE CRITICAL FIX: SYNC DATABASE ---
+    print("4️⃣ Syncing Peer Database (Warming up)...")
     try:
-        # This force-loads the last 30 chats so the Bot/Assistant 'knows' the groups
-        async for dialog in bot.get_dialogs(limit=30):
+        # We fetch dialogs for BOTH bot and assistant to populate the local .session cache
+        # This prevents "ID not found" when a group sends an update
+        async for _ in bot.get_dialogs(limit=30):
             pass
-        async for dialog in assistant.get_dialogs(limit=30):
+        async for _ in assistant.get_dialogs(limit=30):
             pass
         print("✅ Peer Database Synced!")
     except Exception as e:
@@ -181,10 +196,10 @@ async def start_all():
     await idle()
 
 if __name__ == "__main__":
-    # Using a safer loop handling for Python 3.12
-    loop = asyncio.get_event_loop()
+    # Updated loop handling for Python 3.12+ compatibility
     try:
-        loop.run_until_complete(start_all())
+        asyncio.run(start_all())
     except KeyboardInterrupt:
-        pass
+        print("Stopping...")
+
 
