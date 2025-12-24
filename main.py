@@ -52,34 +52,36 @@ async def check_admin(chat_id, user_id):
 async def play_cmd(client, message: Message):
     chat_id = message.chat.id
     
-    # 1. PEER RESOLUTION (Ensures Assistant/Bot recognize the group)
+    # Ensure Assistant and Bot are in sync with the chat
     try:
         await client.get_chat(chat_id)
         await assistant.get_chat(chat_id)
     except:
         pass
     
-    # 2. INPUT VALIDATION
     query = " ".join(message.command[1:])
     if not query:
-        return await message.reply("❌ **Usage:** `/play [song name or link]`")
+        return await message.reply("❌ **Usage:** `/play [song name]`")
 
     m = await message.reply("🔄 **Processing...**")
 
-    # 3. AUTO-INVITE ASSISTANT
+    # 1. SEARCH LOGIC (With Cookie Support)
+    await m.edit("🔎 **Searching with YouTube Cookies...**")
     try:
-        await assistant.get_chat_member(chat_id, "me")
-    except Exception:
-        try:
-            invite_link = await client.export_chat_invite_link(chat_id)
-            await assistant.join_chat(invite_link)
-        except Exception as e:
-            return await m.edit(f"❌ **Assistant join failed:** {e}\n\n*Make sure I am Admin with Invite Users permission.*")
+        ydl_opts = {
+            "format": "bestaudio/best",
+            "quiet": True,
+            "no_warnings": True,
+            "nocheckcertificate": True,
+            # Link the cookies.txt you uploaded to GitHub/Railway
+            "cookiefile": "cookies.txt", 
+            "default_search": "ytsearch",
+        }
+        
+        # Safety check: Verify the cookie file is present on the server
+        if not os.path.exists("cookies.txt"):
+            return await m.edit("❌ **Error:** `cookies.txt` not found. Please ensure it's in your main folder.")
 
-    # 4. SEARCH & EXTRACT (YouTube)
-    await m.edit("🔎 **Searching for your song...**")
-    try:
-        ydl_opts = {"format": "bestaudio", "quiet": True}
         with yt_dlp.YoutubeDL(ydl_opts) as ytdl:
             info = ytdl.extract_info(f"ytsearch:{query}", download=False)['entries'][0]
             url = info['url']
@@ -88,19 +90,19 @@ async def play_cmd(client, message: Message):
     except Exception as e:
         return await m.edit(f"❌ **Search Error:** {e}")
 
-    # 5. START STREAMING
-    await m.edit("🎼 **Starting Voice Chat...**")
+    # 2. STREAMING LOGIC (PyTgCalls v2.2.8+)
+    await m.edit("🎼 **Starting Voice Chat Stream...**")
     try:
-        # Optimized for PyTgCalls v2.2.8 (Audio Only)
         await call_py.play(
             chat_id,
             MediaStream(
                 url,
                 audio_parameters=AudioQuality.STUDIO
+                # Removed video_parameters=None to avoid TypeErrors
             )
         )
         
-        # 6. UI INTERFACE
+        # 3. INTERFACE (Buttons)
         buttons = InlineKeyboardMarkup([
             [
                 InlineKeyboardButton("⏸ Pause", callback_data="pause"),
@@ -113,14 +115,13 @@ async def play_cmd(client, message: Message):
 
         await m.edit(
             f"🎶 **Now Playing**\n\n"
-            f"📌 **Title:** {title[:40]}...\n"
-            f"🕒 **Duration:** {duration}s\n"
-            f"👤 **Requested by:** {message.from_user.mention}",
+            f"📌 **Title:** {title[:45]}...\n"
+            f"👤 **Requested by:** {message.from_user.mention if message.from_user else 'User'}",
             reply_markup=buttons
         )
     except Exception as e:
         if "ffprobe" in str(e).lower():
-            await m.edit("❌ **Streaming Error:** FFmpeg/ffprobe not found on server.\n\n*Tip: Add ffmpeg to your Railway variables.*")
+            await m.edit("❌ **FFmpeg Error:** Ensure `NIXPACKS_PKGS = ffmpeg` is in Railway variables.")
         else:
             await m.edit(f"❌ **Streaming Error:** {e}")
 @bot.on_callback_query()
@@ -233,6 +234,7 @@ if __name__ == "__main__":
         loop.run_until_complete(start_all())
     except KeyboardInterrupt:
         print("Stopping...")
+
 
 
 
