@@ -110,7 +110,9 @@ async def play_cmd(client, message: Message):
     try:
         await call_py.play(
     chat_id,
-    AudioPiped(url, audio_parameters=AudioQuality.STUDIO))
+    MediaStream(
+        url,
+        audio_parameters=AudioQuality.STUDIO))
         
         # 3. INTERFACE (Buttons)
         buttons = InlineKeyboardMarkup([
@@ -244,6 +246,7 @@ if __name__ == "__main__":
         loop.run_until_complete(start_all())
     except KeyboardInterrupt:
         print("Stopping...")
+
 
 
 
