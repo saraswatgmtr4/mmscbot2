@@ -2,8 +2,9 @@
 nixPkgs = ["python311", "ffmpeg", "gcc"]
 
 [phases.install]
-# Use python3 specifically to avoid "executable not found"
+# Use python3 instead of python to create the venv
 cmds = ["python3 -m venv /app/.venv", "/app/.venv/bin/pip install -r requirements.txt"]
 
 [start]
+# Execute the bot using the python3 binary inside the venv
 cmd = "/app/.venv/bin/python3 main.py"
