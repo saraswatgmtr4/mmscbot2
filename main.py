@@ -168,6 +168,7 @@ async def download_song(_, message: Message):
 # --- BOOT ---
 # --- BOOT SECTION ---
 async def start_all():
+    # 1. Start everything
     print("1️⃣ Starting Bot...")
     await bot.start()
     
@@ -177,28 +178,28 @@ async def start_all():
     print("3️⃣ Starting PyTgCalls...")
     await call_py.start()
 
-    # --- 2. THE CRITICAL FIX: SYNC DATABASE ---
-    print("4️⃣ Syncing Peer Database (Warming up)...")
+    # 4. Sync ONLY the Assistant (Bots can't do this)
+    print("4️⃣ Syncing Assistant Database...")
     try:
-        # We fetch dialogs for BOTH bot and assistant to populate the local .session cache
-        # This prevents "ID not found" when a group sends an update
-        async for _ in bot.get_dialogs(limit=30):
+        # We only do this for the assistant to avoid the 400 BOT_METHOD_INVALID error
+        async for _ in assistant.get_dialogs(limit=20):
             pass
-        async for _ in assistant.get_dialogs(limit=30):
-            pass
-        print("✅ Peer Database Synced!")
+        print("✅ Assistant Synced!")
     except Exception as e:
-        print(f"⚠️ Sync warning: {e}")
+        print(f"⚠️ Assistant Sync warning: {e}")
 
     print("🚀 BOT IS ONLINE AND LISTENING!")
+    # This keeps the bot running
     await idle()
 
 if __name__ == "__main__":
-    # Updated loop handling for Python 3.12+ compatibility
+    # Standard way to run in 2025
+    loop = asyncio.get_event_loop()
     try:
-        asyncio.run(start_all())
+        loop.run_until_complete(start_all())
     except KeyboardInterrupt:
         print("Stopping...")
+
 
 
 
